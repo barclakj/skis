@@ -1,21 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="afaa23a3-b57d-4df7-a351-61084570fe6e" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/vcs.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pom.xml" afterPath="$PROJECT_DIR$/pom.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/runboot.sh" afterPath="$PROJECT_DIR$/runboot.sh" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/nfa/skis/SkiController.java" afterPath="$PROJECT_DIR$/src/main/java/com/nfa/skis/SkiController.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/nfa/skis/crypt/SkiCrypt.java" afterPath="$PROJECT_DIR$/src/main/java/com/nfa/skis/crypt/SkiCrypt.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/nfa/skis/crypt/SkiKeyGen.java" afterPath="$PROJECT_DIR$/src/main/java/com/nfa/skis/crypt/SkiKeyGen.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/nfa/skis/crypt/TokenHandler.java" afterPath="$PROJECT_DIR$/src/main/java/com/nfa/skis/crypt/TokenHandler.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/nfa/skis/model/Token.java" afterPath="$PROJECT_DIR$/src/main/java/com/nfa/skis/model/Token.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/nfa/skis/servlet/KeyServlet.java" afterPath="$PROJECT_DIR$/src/main/java/com/nfa/skis/servlet/KeyServlet.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/nfa/skis/servlet/SkiBootController.java" afterPath="$PROJECT_DIR$/src/main/java/com/nfa/skis/servlet/SkiBootController.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/testSrc/TestCoreCrypt.java" afterPath="$PROJECT_DIR$/src/main/testSrc/TestCoreCrypt.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/testSrc/TestCrypt.java" afterPath="$PROJECT_DIR$/src/main/testSrc/TestCrypt.java" />
-    </list>
+    <list default="true" id="afaa23a3-b57d-4df7-a351-61084570fe6e" name="Default" comment="" />
     <ignored path="skis.iws" />
     <ignored path=".idea/workspace.xml" />
     <ignored path="$PROJECT_DIR$/out/" />
