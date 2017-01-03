@@ -5,7 +5,7 @@ package com.nfa.skis.model;
  */
 public class Token {
     private String identity = null;
-    private String key = null;
+    private byte[] key = null;
 
     public String getIdentity() {
         return identity;
@@ -15,11 +15,11 @@ public class Token {
         this.identity = identity;
     }
 
-    public String getKey() {
+    public byte[] getKey() {
         return key;
     }
 
-    public void setKey(String key) {
+    public void setKey(byte[] key) {
         this.key = key;
     }
 }

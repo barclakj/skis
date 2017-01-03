@@ -36,8 +36,8 @@ public class SkiController {
             throw new InternalSkiException("Cannot validate server key!");
         }
 
-        String tokenKey = getTokenKey();
-        String systemKey = getSystemKey();
+        byte[] tokenKey = getTokenKey();
+        byte[] systemKey = getSystemKey();
 
         if (tokenKey==null || systemKey==null) {
             throw new InternalSkiException("Cannot validate token or system keys!");
@@ -49,21 +49,25 @@ public class SkiController {
      * @return
      * @throws InternalSkiException
      */
-    private String getTokenKey() throws InternalSkiException {
+    private byte[] getTokenKey() throws InternalSkiException {
+        return sysKey(TOKEN_KEY);
+    }
+
+    private byte[] sysKey(String name) throws InternalSkiException {
         String tknKey;
         SkiDAO dao = new SkiDAO();
-        tknKey = dao.lookupSystemKey(TOKEN_KEY);
+        byte[] decryptedKey = null;
+        tknKey = dao.lookupSystemKey(name);
         if (tknKey==null) {
-            tknKey = SkiKeyGen.generateKey();
-            byte[] encryptedKey = SkiCrypt.encrypt(tknKey.getBytes(), SERVER_KEY_VALUE);
+            decryptedKey = SkiKeyGen.generateKey(SkiKeyGen.DEFAULT_KEY_SIZE_BITS);
+            byte[] encryptedKey = SkiCrypt.encrypt(decryptedKey, SkiCrypt.b64decode(SERVER_KEY_VALUE));
             String encKeyB64 = SkiCrypt.b64encode(encryptedKey);
             log.severe("NEW TOKEN KEY - RECORD THIS VALUE: " + encKeyB64);
-            dao.saveSystemKey(TOKEN_KEY, encKeyB64);
+            dao.saveSystemKey(name, encKeyB64);
         } else {
-            byte[] decryptedKey = SkiCrypt.decrypt(SkiCrypt.b64decode(tknKey), SERVER_KEY_VALUE);
-            tknKey = new String(decryptedKey);
+            decryptedKey = SkiCrypt.decrypt(SkiCrypt.b64decode(tknKey), SkiCrypt.b64decode(SERVER_KEY_VALUE));
         }
-        return tknKey;
+        return decryptedKey;
     }
 
     /**
@@ -71,21 +75,8 @@ public class SkiController {
      * @return
      * @throws InternalSkiException
      */
-    private String getSystemKey() throws InternalSkiException {
-        String sysKey;
-        SkiDAO dao = new SkiDAO();
-        sysKey = dao.lookupSystemKey(SYSTEM_KEY);
-        if (sysKey==null) {
-            sysKey = SkiKeyGen.generateKey();
-            byte[] encryptedKey = SkiCrypt.encrypt(sysKey.getBytes(), SERVER_KEY_VALUE);
-            String encKeyB64 = SkiCrypt.b64encode(encryptedKey);
-            log.severe("NEW SYSTEM KEY - RECORD THIS VALUE [ROOT KEY!!!]: " + encKeyB64);
-            dao.saveSystemKey( SYSTEM_KEY, encKeyB64);
-        } else {
-            byte[] decryptedKey = SkiCrypt.decrypt(SkiCrypt.b64decode(sysKey), SERVER_KEY_VALUE);
-            sysKey = new String(decryptedKey);
-        }
-        return sysKey;
+    private byte[] getSystemKey() throws InternalSkiException {
+        return sysKey(SYSTEM_KEY);
     }
 
     /**
@@ -95,8 +86,8 @@ public class SkiController {
      * @throws InternalSkiException
      */
     public String createToken(String identity) throws InternalSkiException {
-        String tokenKey = getTokenKey();
-        String newKey = SkiKeyGen.generateKey();
+        byte[] tokenKey = getTokenKey();
+        byte[] newKey = SkiKeyGen.generateKey(SkiKeyGen.DEFAULT_KEY_SIZE_BITS);
 
         Token tkn = new Token();
         tkn.setIdentity(identity);
@@ -121,7 +112,7 @@ public class SkiController {
      * @throws InternalSkiException
      */
     public String grantToIdentity(String identity, String tkn) throws InternalSkiException {
-        String tokenKey =  getTokenKey();
+        byte[] tokenKey =  getTokenKey();
         Token otherTkn = TokenHandler.decodeToken(tkn, tokenKey);
 
         Token newTkn = new Token();
@@ -147,10 +138,10 @@ public class SkiController {
      * @return
      */
     public boolean revokeIdentity(String identity, String rootKey) throws InternalSkiException {
-        String systemKey = getSystemKey();
+        byte[] systemKey = getSystemKey();
         SkiDAO skiDao = new SkiDAO();
 
-        byte[] decryptedKey = SkiCrypt.decrypt(SkiCrypt.b64decode(rootKey), SERVER_KEY_VALUE);
+        byte[] decryptedKey = SkiCrypt.decrypt(SkiCrypt.b64decode(rootKey), SkiCrypt.b64decode(SERVER_KEY_VALUE));
         String decRootKey = new String(decryptedKey);
 
         if (decRootKey.equals(systemKey)) {
@@ -175,8 +166,19 @@ public class SkiController {
      * @return
      * @throws InternalSkiException
      */
-    public String createKey(String keyName, String token) throws InternalSkiException {
-        return createKey(keyName, null, token);
+    public byte[] createKey(String keyName, String token) throws InternalSkiException {
+        return createKey(keyName, null, SkiKeyGen.DEFAULT_KEY_SIZE_BITS, token);
+    }
+
+    /**
+     * Utility method where key value is null and will be generated.
+     * @param keyName
+     * @param token
+     * @return
+     * @throws InternalSkiException
+     */
+    public byte[] createKey(String keyName, int size, String token) throws InternalSkiException {
+        return createKey(keyName, null, size, token);
     }
 
     /**
@@ -191,23 +193,25 @@ public class SkiController {
      * @param token
      * @return
      */
-    public String createKey(String keyName, String keyValue, String token) throws InternalSkiException {
-        String newKey;
-        String systemKey =  getSystemKey();
-        String tokenKey =  getTokenKey();
+    public byte[] createKey(String keyName, byte[] keyValue, int size, String token) throws InternalSkiException {
+        byte[] newKey = null;
+        byte[] systemKey =  getSystemKey();
+        byte[] tokenKey =  getTokenKey();
         SkiDAO skiDao = new SkiDAO();
 
         Token tkn = TokenHandler.decodeToken(token, tokenKey);
         if (tkn!=null) {
             try {
-                String comboKey = SkiKeyGen.getComboKey(tkn.getKey(), systemKey);
+                byte[] comboKey = SkiKeyGen.getComboKey(tkn.getKey(), systemKey);
 
-                newKey = keyValue;
-                if (newKey==null || "".equalsIgnoreCase(newKey.trim())) {
-                    newKey = SkiKeyGen.generateKey();
+                if (keyValue!=null) {
+                    newKey = keyValue;
+                }
+                if (newKey==null) {
+                    newKey = SkiKeyGen.generateKey(size);
                 }
 
-                byte[] encryptedKey = SkiCrypt.encrypt(newKey.getBytes(), comboKey);
+                byte[] encryptedKey = SkiCrypt.encrypt(newKey, comboKey);
                 String strEncryptedKey = SkiCrypt.b64encode(encryptedKey);
                 int saved = skiDao.saveKeyPair(keyName, strEncryptedKey);
                 if (saved!=1) {
@@ -232,24 +236,24 @@ public class SkiController {
      * @return
      * @throws InternalSkiException
      */
-    public String retrieveKey(String keyName, String token) throws InternalSkiException {
-        String retKey;
-        String systemKey =  getSystemKey();
-        String tokenKey =  getTokenKey();
+    public byte[] retrieveKey(String keyName, String token) throws InternalSkiException {
+        byte[] retKey;
+        byte[] systemKey =  getSystemKey();
+        byte[] tokenKey =  getTokenKey();
         SkiDAO skiDao = new SkiDAO();
         Token tkn = TokenHandler.decodeToken(token, tokenKey);
         if (tkn!=null) {
             boolean bl = skiDao.checkBlacklist(tkn.getIdentity());
             if (!bl) {
                 try {
-                    String comboKey = SkiKeyGen.getComboKey(tkn.getKey(), systemKey);
+                    byte[] comboKey = SkiKeyGen.getComboKey(tkn.getKey(), systemKey);
 
                     String encComboKey = skiDao.fetchKey(keyName);
 
                     byte[] encKey = SkiCrypt.b64decode(encComboKey);
                     byte[] decryptedKey = SkiCrypt.decrypt(encKey, comboKey);
 
-                    retKey = new String(decryptedKey);
+                    retKey = decryptedKey;
                 } catch (SkiException e) {
                     log.warning("Unable to retrieve key.  Access denied. Check logs for error: " + e.getMessage());
                     log.log(Level.WARNING, e.getMessage(), e);

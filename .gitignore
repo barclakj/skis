@@ -1,5 +1,9 @@
 target/**
 target/
+target/**
+.idea/
+.idea/**
+
 **.sqlite
 svrkey.txt
 

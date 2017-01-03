@@ -17,21 +17,21 @@ import java.util.logging.Logger;
 public class SkiKeyGen {
     public static Logger log = Logger.getLogger(SkiKeyGen.class.getCanonicalName());
 
-    private static int KEY_SIZE_BYTES = 16;
+    public static int DEFAULT_KEY_SIZE_BITS = 128;
 
     public static Key keyFromBytes(byte[] keyData) {
-        byte[] key = Arrays.copyOf(keyData, KEY_SIZE_BYTES);
+        byte[] key = Arrays.copyOf(keyData, DEFAULT_KEY_SIZE_BITS/8);
         SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");
         return secretKeySpec;
     }
 
-    public static String generateKey() {
+    public static byte[] generateKey(int size) {
         SecureRandom sr = new SecureRandom();
         sr.setSeed(System.currentTimeMillis() + (long)(Math.random()*Integer.MAX_VALUE));
-        byte[] bytes = new byte[KEY_SIZE_BYTES];
+        byte[] bytes = new byte[DEFAULT_KEY_SIZE_BITS/8];
         sr.nextBytes(bytes);
-        String k = SkiCrypt.b64encode(bytes);
-        return k;
+        // String k = SkiCrypt.b64encode(bytes);
+        return bytes;
     }
 
 
@@ -40,9 +40,9 @@ public class SkiKeyGen {
      * @param key
      * @return
      */
-    public static String getComboKey(String key, String systemKey) throws SkiException {
-        String newKey = key + systemKey;
+    public static byte[] getComboKey(byte[] key, byte[] systemKey) throws SkiException {
+        String newKey = new String(key) + new String(systemKey);
         newKey = SkiCrypt.hash(newKey.getBytes());
-        return newKey;
+        return Arrays.copyOf(newKey.getBytes(), DEFAULT_KEY_SIZE_BITS/8);
     }
 }

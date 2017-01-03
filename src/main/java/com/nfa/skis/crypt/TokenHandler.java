@@ -13,7 +13,7 @@ public class TokenHandler {
 
     private static final String DELIM_CHAR = ":";
 
-    public static Token decodeToken(String tkn, String key) {
+    public static Token decodeToken(String tkn, byte[] key) {
         Token token = null;
         byte[] keyData = SkiCrypt.b64decode(tkn);
         try {
@@ -21,8 +21,9 @@ public class TokenHandler {
             String val = new String(dec);
             String identity = val.substring(0, val.indexOf(DELIM_CHAR));
             String tknKey = val.substring(val.indexOf(DELIM_CHAR) + DELIM_CHAR.length());
+
             token = new Token();
-            token.setKey(tknKey);
+            token.setKey(SkiCrypt.b64decode(tknKey));
             token.setIdentity(identity);
         } catch (SkiException e) {
             log.warning("Unable to decode token");
@@ -32,11 +33,12 @@ public class TokenHandler {
         return token;
     }
 
-    public static String encodeToken(Token tkn, String key) {
+    public static String encodeToken(Token tkn, byte[] key) {
         String encString = null;
-        byte[] fullval = (tkn.getIdentity() + DELIM_CHAR + tkn.getKey()).getBytes();
+        String fullval = (tkn.getIdentity() + DELIM_CHAR + SkiCrypt.b64encode(tkn.getKey()));
+        byte[] fullbytes = fullval.getBytes();
         try {
-            byte[] enc = SkiCrypt.encrypt(fullval, key);
+            byte[] enc = SkiCrypt.encrypt(fullbytes, key);
             encString = SkiCrypt.b64encode(enc);
         } catch (SkiException e) {
             log.warning("Unable to encode token");

@@ -71,7 +71,7 @@ public class SkiBootController extends SpringBootServletInitializer {
     }
 
     private static void initSystem() {
-        String svrKey = SkiCrypt.b64encode( (SkiKeyGen.generateKey()).getBytes() );
+        String svrKey = SkiCrypt.b64encode( (SkiKeyGen.generateKey(SkiKeyGen.DEFAULT_KEY_SIZE_BITS)) );
         SkiController.SERVER_KEY_VALUE = svrKey;
         System.out.println("SERVER KEY - RECORD THIS VALUE AND USE AS ENV VAR 'SVR_KEY': " + svrKey);
         try {

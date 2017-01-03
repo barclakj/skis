@@ -35,11 +35,11 @@ public class SkiCrypt {
         return new String(encdata);
     }
 
-    public static byte[] encrypt(byte[] data, String key) throws SkiException {
+    public static byte[] encrypt(byte[] data, byte[] key) throws SkiException {
         byte[] byteCipherText = null;
-        Key k = SkiKeyGen.keyFromBytes(b64decode(key));
+        Key k = SkiKeyGen.keyFromBytes(key);
 
-        byte[] iv = Arrays.copyOfRange(b64decode(key), 0, ivLengthBytes);
+        byte[] iv = Arrays.copyOfRange(key, 0, ivLengthBytes);
 
         try {
             Cipher aesCipherForEncryption = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");
@@ -73,11 +73,11 @@ public class SkiCrypt {
         return byteCipherText;
     }
 
-    public static byte[] decrypt(byte[] data, String key) throws SkiException {
+    public static byte[] decrypt(byte[] data, byte[] key) throws SkiException {
         byte[] rawText = null;
-        Key k = SkiKeyGen.keyFromBytes(b64decode(key));
+        Key k = SkiKeyGen.keyFromBytes(key);
 
-        byte[] iv = Arrays.copyOfRange(b64decode(key), 0, ivLengthBytes);
+        byte[] iv = Arrays.copyOfRange(key, 0, ivLengthBytes);
 
         try {
             Cipher aesCipherForDecryption = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC");

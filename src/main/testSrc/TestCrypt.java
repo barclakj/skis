@@ -1,6 +1,7 @@
 import com.nfa.skis.SkiController;
 import com.nfa.skis.crypt.SkiCrypt;
 import com.nfa.skis.crypt.SkiKeyGen;
+import com.nfa.skis.db.SkiDAO;
 import junit.framework.TestCase;
 
 import java.util.Arrays;
@@ -9,6 +10,10 @@ import java.util.Arrays;
  * Created by barclakj on 26/12/2016.
  */
 public class TestCrypt extends TestCase {
+
+    static {
+        SkiDAO.DB_PATH = "ski.sqlite";
+    }
 
     public void testGrant() {
         try {
@@ -19,7 +24,7 @@ public class TestCrypt extends TestCase {
             String tkn = sc.createToken(identity);
             System.out.println("tkn: " + tkn);
 
-            String key = sc.createKey(keyName, null, tkn);
+            byte[] key = sc.createKey(keyName, null, 128, tkn);
             System.out.println("New key: " + key);
 
             String otherTkn = sc.grantToIdentity("SYSTEM_Y", tkn);
@@ -43,7 +48,7 @@ public class TestCrypt extends TestCase {
             String tkn = sc.createToken(identity);
             System.out.println("tkn: " + tkn);
 
-            String key = sc.createKey(keyName, keyValue, tkn);
+            byte[] key = sc.createKey(keyName, keyValue, 128, tkn);
             System.out.println("New key: " + key);
 
             key = sc.retrieveKey(keyName, tkn);
@@ -65,7 +70,7 @@ public class TestCrypt extends TestCase {
             String tkn = sc.createToken(identity);
             System.out.println("tkn: " + tkn);
 
-            String key = sc.createKey(keyName, null, tkn);
+            byte[] key = sc.createKey(keyName, null, 128, tkn);
             System.out.println("New key: " + key);
 
             key = sc.retrieveKey(keyName, tkn);
@@ -86,7 +91,7 @@ public class TestCrypt extends TestCase {
             String tkn = sc.createToken(identity);
             System.out.println("tkn: " + tkn);
 
-            String key = sc.createKey(keyName, tkn);
+            byte[] key = sc.createKey(keyName, tkn);
             System.out.println("New key: " + key);
         } catch (Throwable t) {
             t.printStackTrace();

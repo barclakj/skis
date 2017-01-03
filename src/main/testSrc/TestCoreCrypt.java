@@ -9,7 +9,7 @@ public class TestCoreCrypt extends TestCase {
 
     public void testA() {
         try {
-            String encKey = SkiKeyGen.generateKey();
+            byte[] encKey = SkiKeyGen.generateKey(128);
             System.out.println("Encrypted key: " + encKey);
 
             String txt = "This is a simple test but what do you think";
@@ -33,10 +33,10 @@ public class TestCoreCrypt extends TestCase {
 
     public void testB() {
         try {
-            String keyA = SkiKeyGen.generateKey();
-            String keyB = SkiKeyGen.generateKey();
+            byte[] keyA = SkiKeyGen.generateKey(128);
+            byte[] keyB = SkiKeyGen.generateKey(128);
 
-            String newKey = keyA + keyB;
+            String newKey = new String(keyA) + new String(keyB);
 
             // newKey = new String(Arrays.copyOf(SkiCrypt.hash(newKey.getBytes()).getBytes(), 20));
             newKey = SkiCrypt.hash(newKey.getBytes());
@@ -47,13 +47,13 @@ public class TestCoreCrypt extends TestCase {
 
             System.out.println("Input data: " + new String(txt));
 
-            byte[] encData = SkiCrypt.encrypt(txt.getBytes(), newKey);
+            byte[] encData = SkiCrypt.encrypt(txt.getBytes(), newKey.getBytes());
             String encString = new String(SkiCrypt.b64encode(encData));
 
             System.out.println("Encrypted data: " + encString);
             System.out.println("Encrypted data string: " + new String(encData));
 
-            byte[] decData = SkiCrypt.decrypt(encData, newKey);
+            byte[] decData = SkiCrypt.decrypt(encData, newKey.getBytes());
 
             System.out.println("Decrypted data: " + new String(decData));
         } catch (Throwable t) {
