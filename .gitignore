@@ -1,0 +1,5 @@
+target/**
+target/
+**.sqlite
+svrkey.txt
+
