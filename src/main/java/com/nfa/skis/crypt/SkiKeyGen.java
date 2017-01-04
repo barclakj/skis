@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 public class SkiKeyGen {
     public static Logger log = Logger.getLogger(SkiKeyGen.class.getCanonicalName());
 
-    public static int DEFAULT_KEY_SIZE_BITS = 128;
+    public static final int DEFAULT_KEY_SIZE_BITS = 128;
 
     public static Key keyFromBytes(byte[] keyData) {
         byte[] key = Arrays.copyOf(keyData, DEFAULT_KEY_SIZE_BITS/8);
@@ -28,7 +28,7 @@ public class SkiKeyGen {
     public static byte[] generateKey(int size) {
         SecureRandom sr = new SecureRandom();
         sr.setSeed(System.currentTimeMillis() + (long)(Math.random()*Integer.MAX_VALUE));
-        byte[] bytes = new byte[DEFAULT_KEY_SIZE_BITS/8];
+        byte[] bytes = new byte[size/8];
         sr.nextBytes(bytes);
         // String k = SkiCrypt.b64encode(bytes);
         return bytes;
