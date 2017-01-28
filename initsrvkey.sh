@@ -1,3 +1,3 @@
-java -jar target/skis.war -init -db=./ski.sqlite
+java -jar target/skis.jar -init -db=./ski.sqlite -acct=NFAHOME
 
 

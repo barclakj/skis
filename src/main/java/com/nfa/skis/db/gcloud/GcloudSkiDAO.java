@@ -4,7 +4,6 @@ import com.google.cloud.datastore.*;
 import com.nfa.skis.crypt.InternalSkiException;
 import com.nfa.skis.db.ISki;
 
-import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -15,9 +14,17 @@ public class GcloudSkiDAO implements ISki {
 
     private static Datastore datastore = DatastoreOptions.getDefaultInstance().getService();
 
-    private static final String BLACKLIST_KIND = "SKIS_BLACKLIST";
-    private static final String KEY_PAIR_KIND = "SKIS_KEY_PAIR";
-    private static final String SYSTEM_KEY_PAIR_KIND = "SKIS_SYSTEM_KEY_PAIR";
+    private static String ACCT = "DEFAULT";
+    private static String BLACKLIST_KIND = ACCT + "_SKIS_BLACKLIST";
+    private static String KEY_PAIR_KIND = ACCT + "_SKIS_KEY_PAIR";
+    private static String SYSTEM_KEY_PAIR_KIND = ACCT + "_SKIS_SYSTEM_KEY_PAIR";
+
+    public static void setAcct(String na) {
+        ACCT = na.toUpperCase().trim();
+        BLACKLIST_KIND = ACCT + "_SKIS_BLACKLIST";
+        KEY_PAIR_KIND = ACCT + "_SKIS_KEY_PAIR";
+        SYSTEM_KEY_PAIR_KIND = ACCT + "_SKIS_SYSTEM_KEY_PAIR";
+    }
 
     public boolean checkBlacklist(String identity) throws InternalSkiException {
         log.info("Searching blacklist for " + identity);
@@ -105,6 +112,34 @@ public class GcloudSkiDAO implements ISki {
             log.info("Key not found: " + keyName);
         }
         return value;
+    }
+
+    public int updateKeyPair(String keyName, String keyValue) throws InternalSkiException {
+        log.info("Searching keys for " + keyName);
+        int value = 0;
+        Query<Entity> query = Query.newEntityQueryBuilder()
+                .setKind(KEY_PAIR_KIND)
+                .setFilter(StructuredQuery.CompositeFilter.and(
+                        StructuredQuery.PropertyFilter.eq("keyName", keyName)))
+                .build();
+
+        QueryResults<Entity> resultSet = datastore.run(query);
+        if (resultSet.hasNext()) {
+            log.info("Found keyname " + keyName);
+            Key k = resultSet.next().getKey();
+            Entity item = Entity.newBuilder(k)
+                    .set("keyName", keyName)
+                    .set("keyValue", keyValue)
+                    .build();
+            Entity putItem = datastore.put(item);
+            log.info("Updated keyValue for " + keyName + " item: " + k.toUrlSafe());
+            value = 1;
+        } else {
+            value = 0;
+            log.info("Key not found: " + keyName);
+        }
+        return value;
+
     }
 
     public int saveSystemKey(String keyName, String keyValue) throws InternalSkiException {

@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 public class KeyServlet {
     private static Logger log = Logger.getLogger(KeyServlet.class.getCanonicalName());
 
-    public static final String TOKEN_HEAD = "X-SKI_TKN";
+    public static final String TOKEN_HEAD = "X-SKI-TKN";
 
     static {
         log.info("Initialising SkiServlet");
@@ -111,6 +111,57 @@ public class KeyServlet {
                 response.sendError(500);
             } catch (JSONException e) {
                 log.log(Level.WARNING, "JSONException on fetching key: " + e.getMessage(), e);
+                response.sendError(500);
+            }
+        } else {
+            response.sendError(401);
+        }
+
+        return result;
+    }
+
+    @PUT
+    @Path("/{keyname}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String updateKey(@PathParam("keyname") String keyName,
+                            @FormParam("keyvalue") String keyValue,
+                            @FormParam("keysize") int keysize,
+                            @Context final HttpServletResponse response,
+                            @Context final HttpServletRequest request) throws IOException {
+        String result = null;
+
+        if (keysize<1) {
+            keysize = SkiKeyGen.DEFAULT_KEY_SIZE_BITS;
+        }
+
+        String token = null;
+        Enumeration<String> tkns = request.getHeaders(TOKEN_HEAD);
+        if (tkns.hasMoreElements()) {
+            token = tkns.nextElement();
+        }
+        if (token!=null) {
+            SkiController sc = new SkiController();
+            try {
+                byte[] keyValData = null;
+                if (keyValue!=null && !"".equals(keyValue.trim())) {
+                    // log.info("Recieved key: " + keyValue);
+                    keyValData = SkiCrypt.b64decode(keyValue);
+                    // log.info("Recieved key as string: " + new String(keyValue));
+                }
+
+                byte[] key = sc.updateKey(keyName, keyValData, keysize, token);
+                // log.info("Created key: " + new String(key));
+                if (key==null) response.sendError(403);
+                else {
+                    JSONObject jo = new JSONObject();
+                    jo.put("key", SkiCrypt.b64encode(key));
+                    result = jo.toString();
+                }
+            } catch (InternalSkiException e) {
+                log.log(Level.WARNING, "InternalSkiException on creating key: " + e.getMessage(), e);
+                response.sendError(500);
+            } catch (JSONException e) {
+                log.log(Level.WARNING, "JSONException on creating key: " + e.getMessage(), e);
                 response.sendError(500);
             }
         } else {

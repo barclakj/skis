@@ -5,7 +5,6 @@ import com.nfa.skis.db.ISki;
 import com.nfa.skis.db.SkiDAO;
 import com.nfa.skis.db.gcloud.GcloudSkiDAO;
 import com.nfa.skis.model.Token;
-import sun.misc.GC;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -296,5 +295,59 @@ public class SkiController {
             retKey = null;
         }
         return retKey;
+    }
+
+    /**
+     * Updates the key value to a new value and returns this value. Token must be valid for the current key for this operation to succeed.
+     * Returns null if the key is not valid.
+     * @param keyName
+     * @param keyValue
+     * @param size
+     * @param token
+     * @return
+     * @throws InternalSkiException
+     */
+    public byte[] updateKey(String keyName, byte[] keyValue, int size, String token) throws InternalSkiException {
+        byte[] newKey = null;
+        byte[] systemKey =  getSystemKey();
+        byte[] tokenKey =  getTokenKey();
+        ISki skiDao = getSkiDao();
+
+        byte[] oldkey = retrieveKey(keyName, token);
+        if (oldkey!=null) {
+
+            Token tkn = TokenHandler.decodeToken(token, tokenKey);
+            if (tkn != null) {
+                try {
+                    byte[] comboKey = SkiKeyGen.getComboKey(tkn.getKey(), systemKey);
+
+                    if (keyValue != null) {
+                        newKey = keyValue;
+                    }
+                    if (newKey == null) {
+                        newKey = SkiKeyGen.generateKey(size);
+                    }
+
+                    byte[] encryptedKey = SkiCrypt.encrypt(newKey, comboKey);
+                    String strEncryptedKey = SkiCrypt.b64encode(encryptedKey);
+                    int saved = skiDao.updateKeyPair(keyName, strEncryptedKey);
+                    if (saved != 1) {
+                        throw new InternalSkiException("Failed to save key pair to database! Check logs...");
+                    }
+                } catch (SkiException e) {
+                    log.warning("Unable to create new key. Access denied. Check logs for error: " + e.getMessage());
+                    log.log(Level.WARNING, e.getMessage(), e);
+                    newKey = null;
+                }
+            } else {
+                log.warning("Unable to decode token during key creation!  Access denied.");
+                newKey = null;
+            }
+        } else {
+            // token not valud.. access denied
+            log.warning("Token now valid for key. Access denied.");
+            newKey = null;
+        }
+        return newKey;
     }
 }

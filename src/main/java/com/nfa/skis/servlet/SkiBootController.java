@@ -5,6 +5,7 @@ import com.nfa.skis.crypt.InternalSkiException;
 import com.nfa.skis.crypt.SkiCrypt;
 import com.nfa.skis.crypt.SkiKeyGen;
 import com.nfa.skis.db.SkiDAO;
+import com.nfa.skis.db.gcloud.GcloudSkiDAO;
 import org.apache.catalina.authenticator.jaspic.AuthConfigFactoryImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
@@ -29,24 +30,33 @@ public class SkiBootController extends SpringBootServletInitializer {
     public static void main(String[] args) throws Exception {
         boolean init = false;
         boolean ready = false;
+        String act = null;
         if (args.length>0) {
             for(int i=0;i<args.length;i++) {
                 if (args[i].startsWith("-db=")) {
                     SkiDAO.DB_PATH = args[i].substring(4);
+                    SkiController.setSQLiteMode();
                     log.info("Database connection string set to: " + args[i].substring(4));
                     ready = true;
                 }
                 if (args[i].equalsIgnoreCase("-init")) {
                     init = true;
                 }
+                if (args[i].startsWith("-acct=")) {
+                    act = args[i].substring(6);
+                    ready = true;
+                    log.info("Using acct: " + act);
+                }
             }
         }
+        if (act!=null) GcloudSkiDAO.setAcct(act);
+
         if (!ready) {
-            System.err.println("Database (-db=<file.sqlite>) must be specified. If initialising then use '-init' flag.");
+            System.err.println("Database (-db=<file.sqlite>) must be specified if using DB or acct if using GCloud. If initialising then use '-init' flag.");
             System.exit(-1);
         } else {
             if (init) {
-                initSystem();
+                initSystem(args);
             } else {
                 startSkiServer(args);
             }
@@ -70,7 +80,9 @@ public class SkiBootController extends SpringBootServletInitializer {
         log.info(ctx.getApplicationName() + " application started!");
     }
 
-    private static void initSystem() {
+    private static void initSystem(String[] args) {
+
+
         String svrKey = SkiCrypt.b64encode( (SkiKeyGen.generateKey(SkiKeyGen.DEFAULT_KEY_SIZE_BITS)) );
         SkiController.SERVER_KEY_VALUE = svrKey;
         System.out.println("SERVER KEY - RECORD THIS VALUE AND USE AS ENV VAR 'SVR_KEY': " + svrKey);

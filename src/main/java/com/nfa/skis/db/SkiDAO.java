@@ -167,6 +167,44 @@ public class SkiDAO implements ISki {
         return rows;
     }
 
+    public int updateKeyPair(String keyName, String keyValue) throws InternalSkiException {
+        int rval;
+        try {
+            initConnection();
+            rval = updateKeyPair(conn, keyName, keyValue);
+        } finally {
+            closeConnection();
+        }
+        return rval;
+    }
+
+    private static int updateKeyPair(Connection conn, String keyName, String keyValue) throws InternalSkiException {
+        int rows = 0;
+        PreparedStatement stmt = null;
+
+        try {
+            stmt = conn.prepareStatement("UPDATE KEYS SET KEY_VALUE=? WHERE KEY_NAME=?");
+            stmt.clearParameters();
+            stmt.setString(1, keyValue);
+            stmt.setString(2, keyName);
+            rows = stmt.executeUpdate();
+        } catch (SQLException e) {
+            log.warning("Exception occurred during saveSystemKey(...)");
+            log.log(Level.WARNING, e.getMessage(), e);
+            throw new InternalSkiException(e);
+        } finally {
+            try {
+                if (stmt!=null) {
+                    stmt.close();
+                }
+            } catch (SQLException e) {
+                log.warning("Exception occurred during cleanup on saveSystemKey(...)");
+                log.log(Level.WARNING, e.getMessage(), e);
+            }
+        }
+        return rows;
+    }
+
     public String fetchKey(String keyName) throws InternalSkiException {
         String rval;
         try {
