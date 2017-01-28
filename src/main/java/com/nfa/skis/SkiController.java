@@ -5,6 +5,7 @@ import com.nfa.skis.db.ISki;
 import com.nfa.skis.db.SkiDAO;
 import com.nfa.skis.db.gcloud.GcloudSkiDAO;
 import com.nfa.skis.model.Token;
+import sun.misc.GC;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,6 +20,11 @@ public class SkiController {
     private static final String TOKEN_KEY = "TKN_KEY";
     public static String SERVER_KEY_VALUE = null;
 
+    public static final int SQLITE_MODE = 0;
+    public static final int GCLOUD_DATASTORE_MODE = 1;
+
+    public static int MODE = GCLOUD_DATASTORE_MODE;
+
     /**
      * Make sure we can initialise the system with the environment variable for SVR_KEY else bomb out.
      */
@@ -29,9 +35,23 @@ public class SkiController {
         }
     }
 
+    public static void setSQLiteMode() {
+        MODE = SQLITE_MODE;
+    }
+
+    public static void setGcloudDatastoreMode() {
+        MODE = GCLOUD_DATASTORE_MODE;
+    }
+
     private static ISki getSkiDao() {
-        return new GcloudSkiDAO();
-        // return new SkiDAO();
+        if (MODE==GCLOUD_DATASTORE_MODE)
+            return new GcloudSkiDAO();
+        else if (MODE==SQLITE_MODE) {
+            return new SkiDAO();
+        } else {
+            log.severe("Invalid database mode specified. Exiting. Mode is current set as: " + MODE);
+            System.exit(-1);
+        }
     }
 
     /**
