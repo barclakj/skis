@@ -1,7 +1,9 @@
 package com.nfa.skis;
 
 import com.nfa.skis.crypt.*;
+import com.nfa.skis.db.ISki;
 import com.nfa.skis.db.SkiDAO;
+import com.nfa.skis.db.gcloud.GcloudSkiDAO;
 import com.nfa.skis.model.Token;
 
 import java.util.logging.Level;
@@ -25,6 +27,11 @@ public class SkiController {
         if (SERVER_KEY_VALUE==null || "".equals(SERVER_KEY_VALUE.trim())) {
             log.severe("Server key env variable not found (SVR_KEY). Ensure this is set before running.");
         }
+    }
+
+    private static ISki getSkiDao() {
+        return new GcloudSkiDAO();
+        // return new SkiDAO();
     }
 
     /**
@@ -55,7 +62,7 @@ public class SkiController {
 
     private byte[] sysKey(String name) throws InternalSkiException {
         String tknKey;
-        SkiDAO dao = new SkiDAO();
+        ISki dao = getSkiDao();
         byte[] decryptedKey = null;
         tknKey = dao.lookupSystemKey(name);
         if (tknKey==null) {
@@ -139,7 +146,7 @@ public class SkiController {
      */
     public boolean revokeIdentity(String identity, String rootKey) throws InternalSkiException {
         byte[] systemKey = getSystemKey();
-        SkiDAO skiDao = new SkiDAO();
+        ISki skiDao = getSkiDao();
 
         byte[] decryptedKey = SkiCrypt.decrypt(SkiCrypt.b64decode(rootKey), SkiCrypt.b64decode(SERVER_KEY_VALUE));
         String decRootKey = new String(decryptedKey);
@@ -197,7 +204,7 @@ public class SkiController {
         byte[] newKey = null;
         byte[] systemKey =  getSystemKey();
         byte[] tokenKey =  getTokenKey();
-        SkiDAO skiDao = new SkiDAO();
+        ISki skiDao = getSkiDao();
 
         Token tkn = TokenHandler.decodeToken(token, tokenKey);
         if (tkn!=null) {
@@ -240,7 +247,7 @@ public class SkiController {
         byte[] retKey;
         byte[] systemKey =  getSystemKey();
         byte[] tokenKey =  getTokenKey();
-        SkiDAO skiDao = new SkiDAO();
+        ISki skiDao = getSkiDao();
         Token tkn = TokenHandler.decodeToken(token, tokenKey);
         if (tkn!=null) {
             boolean bl = skiDao.checkBlacklist(tkn.getIdentity());

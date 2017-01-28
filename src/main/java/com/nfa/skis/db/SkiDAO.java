@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 /**
  * Created by barclakj on 26/12/2016.
  */
-public class SkiDAO {
+public class SkiDAO implements ISki {
     public static Logger log = Logger.getLogger(SkiDAO.class.getCanonicalName());
 
     public static String DB_PATH = null;

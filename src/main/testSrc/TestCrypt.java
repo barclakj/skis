@@ -48,7 +48,7 @@ public class TestCrypt extends TestCase {
             String tkn = sc.createToken(identity);
             System.out.println("tkn: " + tkn);
 
-            byte[] key = sc.createKey(keyName, keyValue, 128, tkn);
+            byte[] key = sc.createKey(keyName, keyValue.getBytes(), 128, tkn);
             System.out.println("New key: " + key);
 
             key = sc.retrieveKey(keyName, tkn);
