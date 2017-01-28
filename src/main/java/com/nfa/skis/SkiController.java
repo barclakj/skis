@@ -51,6 +51,7 @@ public class SkiController {
         } else {
             log.severe("Invalid database mode specified. Exiting. Mode is current set as: " + MODE);
             System.exit(-1);
+            return null; // not that we should ever get here!
         }
     }
 
