@@ -1,10 +1,6 @@
 import com.nfa.skis.SkiController;
-import com.nfa.skis.crypt.SkiCrypt;
-import com.nfa.skis.crypt.SkiKeyGen;
 import com.nfa.skis.db.SkiDAO;
 import junit.framework.TestCase;
-
-import java.util.Arrays;
 
 /**
  * Created by barclakj on 26/12/2016.

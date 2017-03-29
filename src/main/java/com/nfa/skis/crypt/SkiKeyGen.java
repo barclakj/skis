@@ -42,7 +42,8 @@ public class SkiKeyGen {
      */
     public static byte[] getComboKey(byte[] key, byte[] systemKey) throws SkiException {
         String newKey = new String(key) + new String(systemKey);
-        newKey = SkiCrypt.hash(newKey.getBytes());
-        return Arrays.copyOf(newKey.getBytes(), DEFAULT_KEY_SIZE_BITS/8);
+        byte[] newKeyByte = SkiUtils.hash(newKey.getBytes(), DEFAULT_KEY_SIZE_BITS);
+        log.info("Key size should be " + DEFAULT_KEY_SIZE_BITS + " and is " + (8*newKeyByte.length));
+        return newKeyByte; // Arrays.copyOf(newKey.getBytes(), DEFAULT_KEY_SIZE_BITS/8);
     }
 }

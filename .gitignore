@@ -3,7 +3,11 @@ target/
 target/**
 .idea/
 .idea/**
-
+runboot.sh
 **.sqlite
+**.db
 svrkey.txt
+cp2google
+**.sh
+x
 

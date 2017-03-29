@@ -1,6 +1,7 @@
 package com.nfa.skis;
 
 import com.nfa.skis.crypt.*;
+import com.nfa.skis.db.ConnectionPool;
 import com.nfa.skis.db.ISki;
 import com.nfa.skis.db.SkiDAO;
 import com.nfa.skis.db.gcloud.GcloudSkiDAO;
@@ -19,10 +20,15 @@ public class SkiController {
     private static final String TOKEN_KEY = "TKN_KEY";
     public static String SERVER_KEY_VALUE = null;
 
+    public static String DB_PATH = null;
     public static final int SQLITE_MODE = 0;
     public static final int GCLOUD_DATASTORE_MODE = 1;
 
     public static int MODE = GCLOUD_DATASTORE_MODE;
+
+    private ICrypter crypter = new BasicJCECrypter();
+
+    private TokenHandler th = new TokenHandler();
 
     /**
      * Make sure we can initialise the system with the environment variable for SVR_KEY else bomb out.
@@ -46,7 +52,11 @@ public class SkiController {
         if (MODE==GCLOUD_DATASTORE_MODE)
             return new GcloudSkiDAO();
         else if (MODE==SQLITE_MODE) {
-            return new SkiDAO();
+            SkiDAO skiDao = new SkiDAO();
+            ConnectionPool pool = new ConnectionPool();
+            pool.initialize("org.sqlite.JDBC", "jdbc:sqlite:" + SkiController.DB_PATH, null, null);
+            skiDao.setConnectionPool(pool);
+            return skiDao;
         } else {
             log.severe("Invalid database mode specified. Exiting. Mode is current set as: " + MODE);
             System.exit(-1);
@@ -87,12 +97,12 @@ public class SkiController {
         tknKey = dao.lookupSystemKey(name);
         if (tknKey==null) {
             decryptedKey = SkiKeyGen.generateKey(SkiKeyGen.DEFAULT_KEY_SIZE_BITS);
-            byte[] encryptedKey = SkiCrypt.encrypt(decryptedKey, SkiCrypt.b64decode(SERVER_KEY_VALUE));
-            String encKeyB64 = SkiCrypt.b64encode(encryptedKey);
+            byte[] encryptedKey = crypter.encrypt(decryptedKey, SkiUtils.b64decode(SERVER_KEY_VALUE));
+            String encKeyB64 = SkiUtils.b64encode(encryptedKey);
             log.severe("NEW TOKEN KEY - RECORD THIS VALUE: " + encKeyB64);
             dao.saveSystemKey(name, encKeyB64);
         } else {
-            decryptedKey = SkiCrypt.decrypt(SkiCrypt.b64decode(tknKey), SkiCrypt.b64decode(SERVER_KEY_VALUE));
+            decryptedKey = crypter.decrypt(SkiUtils.b64decode(tknKey), SkiUtils.b64decode(SERVER_KEY_VALUE));
         }
         return decryptedKey;
     }
@@ -121,7 +131,7 @@ public class SkiController {
         tkn.setKey(newKey);
         // log.info("New token key: " + tkn.getKey());
 
-        String tknValue = TokenHandler.encodeToken(tkn, tokenKey);
+        String tknValue = th.encodeToken(tkn, tokenKey);
         if (tknValue==null) {
             log.warning("Failed to encode token during token creation!");
         }
@@ -140,14 +150,14 @@ public class SkiController {
      */
     public String grantToIdentity(String identity, String tkn) throws InternalSkiException {
         byte[] tokenKey =  getTokenKey();
-        Token otherTkn = TokenHandler.decodeToken(tkn, tokenKey);
+        Token otherTkn = th.decodeToken(tkn, tokenKey);
 
         Token newTkn = new Token();
         newTkn.setIdentity(identity);
         newTkn.setKey(otherTkn.getKey());
         // log.info("New granted key: " + newTkn.getKey());
 
-        String tknValue = TokenHandler.encodeToken(newTkn, tokenKey);
+        String tknValue = th.encodeToken(newTkn, tokenKey);
         if (tknValue==null) {
             log.warning("Failed to encode token during identity grant!");
         }
@@ -168,7 +178,7 @@ public class SkiController {
         byte[] systemKey = getSystemKey();
         ISki skiDao = getSkiDao();
 
-        byte[] decryptedKey = SkiCrypt.decrypt(SkiCrypt.b64decode(rootKey), SkiCrypt.b64decode(SERVER_KEY_VALUE));
+        byte[] decryptedKey = crypter.decrypt(SkiUtils.b64decode(rootKey), SkiUtils.b64decode(SERVER_KEY_VALUE));
         String decRootKey = new String(decryptedKey);
 
         if (decRootKey.equals(systemKey)) {
@@ -226,7 +236,7 @@ public class SkiController {
         byte[] tokenKey =  getTokenKey();
         ISki skiDao = getSkiDao();
 
-        Token tkn = TokenHandler.decodeToken(token, tokenKey);
+        Token tkn = th.decodeToken(token, tokenKey);
         if (tkn!=null) {
             try {
                 byte[] comboKey = SkiKeyGen.getComboKey(tkn.getKey(), systemKey);
@@ -238,8 +248,8 @@ public class SkiController {
                     newKey = SkiKeyGen.generateKey(size);
                 }
 
-                byte[] encryptedKey = SkiCrypt.encrypt(newKey, comboKey);
-                String strEncryptedKey = SkiCrypt.b64encode(encryptedKey);
+                byte[] encryptedKey = crypter.encrypt(newKey, comboKey);
+                String strEncryptedKey = SkiUtils.b64encode(encryptedKey);
                 int saved = skiDao.saveKeyPair(keyName, strEncryptedKey);
                 if (saved!=1) {
                     throw new InternalSkiException("Failed to save key pair to database! Check logs...");
@@ -268,7 +278,7 @@ public class SkiController {
         byte[] systemKey =  getSystemKey();
         byte[] tokenKey =  getTokenKey();
         ISki skiDao = getSkiDao();
-        Token tkn = TokenHandler.decodeToken(token, tokenKey);
+        Token tkn = th.decodeToken(token, tokenKey);
         if (tkn!=null) {
             boolean bl = skiDao.checkBlacklist(tkn.getIdentity());
             if (!bl) {
@@ -277,10 +287,16 @@ public class SkiController {
 
                     String encComboKey = skiDao.fetchKey(keyName);
 
-                    byte[] encKey = SkiCrypt.b64decode(encComboKey);
-                    byte[] decryptedKey = SkiCrypt.decrypt(encKey, comboKey);
+                    if (encComboKey!=null) {
 
-                    retKey = decryptedKey;
+                        byte[] encKey = SkiUtils.b64decode(encComboKey);
+                        byte[] decryptedKey = crypter.decrypt(encKey, comboKey);
+
+                        retKey = decryptedKey;
+                    } else {
+                        log.warning("Unable to fetch key (is null) by name: " + keyName);
+                        retKey = null;
+                    }
                 } catch (SkiException e) {
                     log.warning("Unable to retrieve key.  Access denied. Check logs for error: " + e.getMessage());
                     log.log(Level.WARNING, e.getMessage(), e);
@@ -316,7 +332,7 @@ public class SkiController {
         byte[] oldkey = retrieveKey(keyName, token);
         if (oldkey!=null) {
 
-            Token tkn = TokenHandler.decodeToken(token, tokenKey);
+            Token tkn = th.decodeToken(token, tokenKey);
             if (tkn != null) {
                 try {
                     byte[] comboKey = SkiKeyGen.getComboKey(tkn.getKey(), systemKey);
@@ -328,8 +344,8 @@ public class SkiController {
                         newKey = SkiKeyGen.generateKey(size);
                     }
 
-                    byte[] encryptedKey = SkiCrypt.encrypt(newKey, comboKey);
-                    String strEncryptedKey = SkiCrypt.b64encode(encryptedKey);
+                    byte[] encryptedKey = crypter.encrypt(newKey, comboKey);
+                    String strEncryptedKey = SkiUtils.b64encode(encryptedKey);
                     int saved = skiDao.updateKeyPair(keyName, strEncryptedKey);
                     if (saved != 1) {
                         throw new InternalSkiException("Failed to save key pair to database! Check logs...");

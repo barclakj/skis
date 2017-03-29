@@ -13,17 +13,19 @@ public class TokenHandler {
 
     private static final String DELIM_CHAR = ":";
 
-    public static Token decodeToken(String tkn, byte[] key) {
+    private ICrypter crypter = new BasicJCECrypter();
+
+    public Token decodeToken(String tkn, byte[] key) {
         Token token = null;
-        byte[] keyData = SkiCrypt.b64decode(tkn);
+        byte[] keyData = SkiUtils.b64decode(tkn);
         try {
-            byte[] dec = SkiCrypt.decrypt(keyData, key);
+            byte[] dec = crypter.decrypt(keyData, key);
             String val = new String(dec);
             String identity = val.substring(0, val.indexOf(DELIM_CHAR));
             String tknKey = val.substring(val.indexOf(DELIM_CHAR) + DELIM_CHAR.length());
 
             token = new Token();
-            token.setKey(SkiCrypt.b64decode(tknKey));
+            token.setKey(SkiUtils.b64decode(tknKey));
             token.setIdentity(identity);
         } catch (SkiException e) {
             log.warning("Unable to decode token");
@@ -33,13 +35,13 @@ public class TokenHandler {
         return token;
     }
 
-    public static String encodeToken(Token tkn, byte[] key) {
+    public String encodeToken(Token tkn, byte[] key) {
         String encString = null;
-        String fullval = (tkn.getIdentity() + DELIM_CHAR + SkiCrypt.b64encode(tkn.getKey()));
+        String fullval = (tkn.getIdentity() + DELIM_CHAR + SkiUtils.b64encode(tkn.getKey()));
         byte[] fullbytes = fullval.getBytes();
         try {
-            byte[] enc = SkiCrypt.encrypt(fullbytes, key);
-            encString = SkiCrypt.b64encode(enc);
+            byte[] enc = crypter.encrypt(fullbytes, key);
+            encString = SkiUtils.b64encode(enc);
         } catch (SkiException e) {
             log.warning("Unable to encode token");
             log.log(Level.WARNING, e.getMessage(), e);

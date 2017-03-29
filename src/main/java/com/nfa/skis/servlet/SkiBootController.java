@@ -1,9 +1,7 @@
 package com.nfa.skis.servlet;
 
 import com.nfa.skis.SkiController;
-import com.nfa.skis.crypt.InternalSkiException;
-import com.nfa.skis.crypt.SkiCrypt;
-import com.nfa.skis.crypt.SkiKeyGen;
+import com.nfa.skis.crypt.*;
 import com.nfa.skis.db.SkiDAO;
 import com.nfa.skis.db.gcloud.GcloudSkiDAO;
 import org.apache.catalina.authenticator.jaspic.AuthConfigFactoryImpl;
@@ -13,6 +11,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.support.SpringBootServletInitializer;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 
 import javax.security.auth.message.config.AuthConfigFactory;
 import java.util.logging.Level;
@@ -34,7 +33,7 @@ public class SkiBootController extends SpringBootServletInitializer {
         if (args.length>0) {
             for(int i=0;i<args.length;i++) {
                 if (args[i].startsWith("-db=")) {
-                    SkiDAO.DB_PATH = args[i].substring(4);
+                    SkiController.DB_PATH = args[i].substring(4);
                     SkiController.setSQLiteMode();
                     log.info("Database connection string set to: " + args[i].substring(4));
                     ready = true;
@@ -83,7 +82,7 @@ public class SkiBootController extends SpringBootServletInitializer {
     private static void initSystem(String[] args) {
 
 
-        String svrKey = SkiCrypt.b64encode( (SkiKeyGen.generateKey(SkiKeyGen.DEFAULT_KEY_SIZE_BITS)) );
+        String svrKey = SkiUtils.b64encode( (SkiKeyGen.generateKey(SkiKeyGen.DEFAULT_KEY_SIZE_BITS)) );
         SkiController.SERVER_KEY_VALUE = svrKey;
         System.out.println("SERVER KEY - RECORD THIS VALUE AND USE AS ENV VAR 'SVR_KEY': " + svrKey);
         try {

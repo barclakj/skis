@@ -12,53 +12,28 @@ import java.util.logging.Logger;
 public class SkiDAO implements ISki {
     public static Logger log = Logger.getLogger(SkiDAO.class.getCanonicalName());
 
-    public static String DB_PATH = null;
+    private ConnectionPool pool = null;
 
-    private Connection conn;
-
-    static {
-        try {
-            Class.forName("org.sqlite.JDBC");
-        } catch (Exception e) {
-            log.log(Level.SEVERE, "Fatal error initialising JDBC driver");
-            log.log(Level.SEVERE, e.getMessage(), e);
-            System.exit(-1);
-        }
-    }
-
-    private void closeConnection() throws InternalSkiException {
-        try {
-            this.conn.close();
-        } catch (SQLException e) {
-            throw new InternalSkiException(e);
-        }
-    }
-
-    private void initConnection() throws InternalSkiException {
-        try {
-            if (DB_PATH == null) {
-                throw new InternalSkiException("No database path specified");
-            }
-            conn = DriverManager.getConnection("jdbc:sqlite:" + DB_PATH);
-            conn.setAutoCommit(true);
-            if (log.isLoggable(Level.FINE)) {
-                log.fine("Connected to: " + DB_PATH);
-            }
-        } catch (SQLException e) {
-            conn = null;
-            log.warning("Exception occurred during constructor(...)");
-            log.log(Level.WARNING, e.getMessage(), e);
-            throw new InternalSkiException(e);
-        }
+    public void setConnectionPool(ConnectionPool cp) {
+        this.pool = cp;
     }
 
     public boolean checkBlacklist(String identity) throws InternalSkiException {
         boolean bool = false;
+        Connection conn = null;
         try {
-            initConnection();
+            conn = pool.getConnection();
             bool = checkBlacklist(conn, identity);
+        } catch (SQLException e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
+            throw new InternalSkiException(e);
         } finally {
-            closeConnection();
+            if (conn!=null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) { }
+            }
+            conn = null;
         }
         return bool;
     }
@@ -93,11 +68,20 @@ public class SkiDAO implements ISki {
 
     public int blacklistIdentity(String identity) throws InternalSkiException {
         int rval;
+        Connection conn = null;
         try {
-            initConnection();
+            conn = pool.getConnection();
             rval = blacklistIdentity(conn, identity);
+        } catch (SQLException e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
+            throw new InternalSkiException(e);
         } finally {
-            closeConnection();
+            if (conn!=null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) { }
+            }
+            conn = null;
         }
         return rval;
     }
@@ -131,11 +115,20 @@ public class SkiDAO implements ISki {
 
     public int saveKeyPair(String keyName, String keyValue) throws InternalSkiException {
         int rval;
+        Connection conn = null;
         try {
-            initConnection();
+            conn = pool.getConnection();
             rval = saveKeyPair(conn, keyName, keyValue);
+        } catch (SQLException e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
+            throw new InternalSkiException(e);
         } finally {
-            closeConnection();
+            if (conn!=null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) { }
+            }
+            conn = null;
         }
         return rval;
     }
@@ -169,11 +162,20 @@ public class SkiDAO implements ISki {
 
     public int updateKeyPair(String keyName, String keyValue) throws InternalSkiException {
         int rval;
+        Connection conn = null;
         try {
-            initConnection();
+            conn = pool.getConnection();
             rval = updateKeyPair(conn, keyName, keyValue);
+        } catch (SQLException e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
+            throw new InternalSkiException(e);
         } finally {
-            closeConnection();
+            if (conn!=null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) { }
+            }
+            conn = null;
         }
         return rval;
     }
@@ -207,11 +209,20 @@ public class SkiDAO implements ISki {
 
     public String fetchKey(String keyName) throws InternalSkiException {
         String rval;
+        Connection conn = null;
         try {
-            initConnection();
+            conn = pool.getConnection();
             rval = fetchKey(conn, keyName);
+        } catch (SQLException e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
+            throw new InternalSkiException(e);
         } finally {
-            closeConnection();
+            if (conn!=null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) { }
+            }
+            conn = null;
         }
         return rval;
     }
@@ -247,11 +258,20 @@ public class SkiDAO implements ISki {
 
     public int saveSystemKey(String keyName, String keyValue) throws InternalSkiException {
         int rval;
+        Connection conn = null;
         try {
-            initConnection();
+            conn = pool.getConnection();
             rval = saveSystemKey(conn, keyName, keyValue);
+        } catch (SQLException e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
+            throw new InternalSkiException(e);
         } finally {
-            closeConnection();
+            if (conn!=null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) { }
+            }
+            conn = null;
         }
         return rval;
     }
@@ -285,11 +305,20 @@ public class SkiDAO implements ISki {
 
     public String lookupSystemKey(String keyName) throws InternalSkiException {
         String rval;
+        Connection conn = null;
         try {
-            initConnection();
+            conn = pool.getConnection();
             rval = lookupSystemKey(conn, keyName);
+        } catch (SQLException e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
+            throw new InternalSkiException(e);
         } finally {
-            closeConnection();
+            if (conn!=null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) { }
+            }
+            conn = null;
         }
         return rval;
     }

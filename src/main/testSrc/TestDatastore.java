@@ -1,5 +1,3 @@
-import com.nfa.skis.crypt.SkiCrypt;
-import com.nfa.skis.crypt.SkiKeyGen;
 import com.nfa.skis.db.ISki;
 import com.nfa.skis.db.gcloud.GcloudSkiDAO;
 import junit.framework.TestCase;

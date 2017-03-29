@@ -1,22 +1,21 @@
 package com.nfa.skis.crypt;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.springframework.stereotype.Component;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Created by barclakj on 26/12/2016.
  */
-public class SkiCrypt {
-    public static Logger log = Logger.getLogger(SkiCrypt.class.getCanonicalName());
+@Component
+public class BasicJCECrypter implements ICrypter {
+    public static Logger log = Logger.getLogger(BasicJCECrypter.class.getCanonicalName());
 
     private static int AES_KEYLENGTH = 128;
     private static int ivLengthBytes = AES_KEYLENGTH / 8;	// Save the IV bytes or send it in plaintext with the encrypted data so you can decrypt the data later
@@ -25,17 +24,9 @@ public class SkiCrypt {
         Security.addProvider(new BouncyCastleProvider());
     }
 
-    public static byte[] b64decode(String encdata) {
-        byte[] data = Base64.getDecoder().decode(encdata);
-        return data;
-    }
 
-    public static String b64encode(byte[] data) {
-        byte[] encdata = Base64.getEncoder().encode(data);
-        return new String(encdata);
-    }
 
-    public static byte[] encrypt(byte[] data, byte[] key) throws SkiException {
+    public byte[] encrypt(byte[] data, byte[] key) throws SkiException {
         byte[] byteCipherText = null;
         Key k = SkiKeyGen.keyFromBytes(key);
 
@@ -73,7 +64,7 @@ public class SkiCrypt {
         return byteCipherText;
     }
 
-    public static byte[] decrypt(byte[] data, byte[] key) throws SkiException {
+    public  byte[] decrypt(byte[] data, byte[] key) throws SkiException {
         byte[] rawText = null;
         Key k = SkiKeyGen.keyFromBytes(key);
 
@@ -110,21 +101,5 @@ public class SkiCrypt {
         return rawText;
     }
 
-    public static String hash(byte[] data) throws SkiException  {
-        String strDigest = null;
-        byte[] digest = null;
-
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(data); // Change this to "UTF-16" if needed
-            digest = md.digest();
-            strDigest = b64encode(digest);
-        } catch (NoSuchAlgorithmException e) {
-            log.log(Level.WARNING, e.getClass().getCanonicalName() + " " + e.getMessage(), e);
-            throw new SkiException(e);
-        }
-
-        return strDigest;
-    }
 
 }

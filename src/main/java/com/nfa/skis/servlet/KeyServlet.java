@@ -2,8 +2,8 @@ package com.nfa.skis.servlet;
 
 import com.nfa.skis.SkiController;
 import com.nfa.skis.crypt.InternalSkiException;
-import com.nfa.skis.crypt.SkiCrypt;
 import com.nfa.skis.crypt.SkiKeyGen;
+import com.nfa.skis.crypt.SkiUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
@@ -57,7 +57,7 @@ public class KeyServlet {
                 byte[] keyValData = null;
                 if (keyValue!=null && !"".equals(keyValue.trim())) {
                     // log.info("Recieved key: " + keyValue);
-                    keyValData = SkiCrypt.b64decode(keyValue);
+                    keyValData = SkiUtils.b64decode(keyValue);
                     // log.info("Recieved key as string: " + new String(keyValue));
                 }
                 byte[] key = sc.createKey(keyName, keyValData, keysize, token);
@@ -65,7 +65,7 @@ public class KeyServlet {
                 if (key==null) response.sendError(403);
                 else {
                     JSONObject jo = new JSONObject();
-                    jo.put("key", SkiCrypt.b64encode(key));
+                    jo.put("key", SkiUtils.b64encode(key));
                     result = jo.toString();
                 }
             } catch (InternalSkiException e) {
@@ -84,11 +84,10 @@ public class KeyServlet {
 
     @GET
     @Path("/{keyname}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public String getKey(@PathParam("keyname") String keyName,
+    public byte[] getKey(@PathParam("keyname") String keyName,
                          @Context final HttpServletResponse response,
                          @Context final HttpServletRequest request) throws IOException {
-        String result = null;
+        byte[] result = null;
         String token = null;
 
         Enumeration<String> tkns = request.getHeaders(TOKEN_HEAD);
@@ -102,9 +101,16 @@ public class KeyServlet {
                 byte[] key = sc.retrieveKey(keyName, token);
                 if (key==null) response.sendError(403);
                 else {
-                    JSONObject jo = new JSONObject();
-                    jo.put("key", SkiCrypt.b64encode(key));
-                    result = jo.toString();
+                    String acceptHeader = request.getHeader("Accept");
+                    if (acceptHeader!=null && acceptHeader.indexOf("application/octet-stream")>=0) {
+                        response.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+                        result = key;
+                    } else {
+                        response.setContentType(MediaType.APPLICATION_JSON);
+                        JSONObject jo = new JSONObject();
+                        jo.put("key", SkiUtils.b64encode(key));
+                        result = jo.toString().getBytes();
+                    }
                 }
             } catch (InternalSkiException e) {
                 log.log(Level.WARNING, "InternalSkiException on fetching key: " + e.getMessage(), e);
@@ -145,7 +151,7 @@ public class KeyServlet {
                 byte[] keyValData = null;
                 if (keyValue!=null && !"".equals(keyValue.trim())) {
                     // log.info("Recieved key: " + keyValue);
-                    keyValData = SkiCrypt.b64decode(keyValue);
+                    keyValData = SkiUtils.b64decode(keyValue);
                     // log.info("Recieved key as string: " + new String(keyValue));
                 }
 
@@ -154,7 +160,7 @@ public class KeyServlet {
                 if (key==null) response.sendError(403);
                 else {
                     JSONObject jo = new JSONObject();
-                    jo.put("key", SkiCrypt.b64encode(key));
+                    jo.put("key", SkiUtils.b64encode(key));
                     result = jo.toString();
                 }
             } catch (InternalSkiException e) {
